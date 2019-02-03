@@ -1,0 +1,195 @@
+#include <iostream>
+#include <stack>
+using namespace std;
+
+
+string pegNames(int pegNum);
+
+stack<int> *buildPegs()
+{
+    auto *pegArray = new stack<int>[5];//make an array with enough slots for the pegs
+    stack<int> start, a1, a2, a3, dest;//make the stack-pegs
+    pegArray[0] = start;
+    pegArray[1] = a1;
+    pegArray[2] = a2;
+    pegArray[3] = a3;
+    pegArray[4] = dest;
+    //stack<int> *ptr = pegArray;
+    return pegArray;
+}
+stack<int> *buildTower(stack<int> *pegArr, int ringNum)
+{
+    //pushes the number of discs onto Start stack backwards so they are in the correct size order
+    for(int i = ringNum; i > 0; i--)
+    {
+        pegArr[0].push(i);
+        //cout << "Pushing " << i << " onto peg " << pegNames(0) << endl;
+    }
+//    while(!pegArr[0].empty())
+//    {
+//        cout << "Popping disk " << pegArr[0].top() << " from peg " << pegNames(0) << "." << endl;
+//        pegArr[0].pop();
+//    }
+    //stack<int> *p = pegArr;
+    return pegArr;
+}
+bool isItLegal(stack<int> * arr, int cPeg, int nPeg)
+{
+    if(arr[cPeg].empty())
+    {
+        //if the current peg is empty, return false before we get to the next else if
+        //stops the program from accidentally trying to find the top of a stack when that doesn't currently exist
+        return false;
+    }
+    else if(arr[nPeg].empty())
+    {
+        return true;
+    }
+    else if(arr[cPeg].top() < arr[nPeg].top())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+string pegNames(int pegNum)
+{
+    string name;
+    switch(pegNum)
+    {
+        case 0:
+        {
+            name =  "Start";
+            break;
+        }
+        case 1:
+        {
+            name =  "A1";
+            break;
+        }
+        case 2:
+        {
+            name =  "A2";
+            break;
+        }
+        case 3:
+        {
+            name =  "A3";
+            break;
+        }
+        case 4:
+        {
+            name =  "Destination";
+            break;
+        }
+    }
+    return name;
+}
+stack<int> *move(stack<int> *arr, int start, int end)
+{
+//int disksOut = arr[1].size() + arr[2].size() + arr[3].size();
+    int temp = start;//paranoid. Don't wanna permanently alter start just in case
+    if(!isItLegal(arr, temp, end))
+    {
+        //move(arr, 3, 1);
+        return arr;
+    }
+    if(start < end)
+    {
+        while(temp < end)
+        {
+            int cTop = arr[temp].top();
+            cout << "Legal move: Moving disk " << arr[temp].top() << " from peg " << pegNames(temp) << " to peg " << pegNames(temp+1) << endl;
+            arr[temp].pop();
+            arr[temp+1].push(cTop);
+            temp++;
+        }
+    }
+    else if(temp == 3 && end == 1)//specific backwards movement
+    {
+        if(isItLegal(arr, 3, 1))
+        {
+            int temp2 = arr[temp].top();
+            cout << "Legal move: Moving disk " << temp2 << " from peg " << pegNames(temp) << " to peg " << pegNames(end) << endl;
+            arr[temp].pop();
+            arr[end].push(temp2);
+        }
+        else if(!isItLegal(arr, 3, 1))
+        {
+            if(isItLegal(arr, 1, 2))
+            {
+                move(arr, 1, 2);
+                move(arr, 3, 1);
+                move(arr, 2, 3);
+                move(arr, 3, 1);
+                move(arr, 2, 4);
+            }
+        }
+    }
+    return arr;
+}
+void F(stack<int> *arr, int n, int start, int dest, int diskTotal)
+{
+    int S = 0;
+    int a1 = 1;
+    int a2 = 2;
+    int a3 = 3;
+    int D = 4;
+
+    if(n == 1)
+    {
+        if(n == diskTotal)
+        {
+            move(arr, S, D);
+        }
+        if(!arr[a2].empty() && arr[a2].top() == diskTotal && arr[3].top() == arr[a2].top()-1)
+        {
+            if(isItLegal(arr, a3, a1))
+            {
+                move(arr, a3, a1);
+            }
+            else
+            {
+                if(isItLegal(arr, a1, a2))
+                {
+                    move(arr, a1, a2);
+                    move(arr, a3, a1);
+                }
+            }
+        }
+        if(!arr[a3].empty() && arr[a3].top() == diskTotal)
+        {
+            move(arr, a3, D);
+            F(arr, n, a1, D, diskTotal);
+        }
+        else
+        {
+            move(arr, start, dest);
+        }
+    }
+    else if(n >= 1)
+    {
+        F(arr, n-1, S, a3, diskTotal);
+        move(arr, S, a2);
+        F(arr, n-1, a3, a1, diskTotal);
+        move(arr, a2, a3);
+        //move(arr, a3, D);
+        F(arr, n-1, a2, D, diskTotal);
+
+    }
+}
+int main()
+{
+    int diskNum = 3;
+    int start = 0;
+    int a1 = 1;
+    int a2 = 2;
+    int a3 = 3;
+    int dest = 4;
+    auto *temp = buildPegs();
+    auto *temp2 = buildTower(temp, diskNum);
+    F(temp2, diskNum, 0, 0, diskNum);
+  
+}
